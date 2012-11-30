@@ -123,16 +123,10 @@ class LSHash(object):
         else:
             raise ValueError("The storage name you specified is not supported")
 
-    def index(self, input_point, identifier=False):
-        """ index a single input point. If identifier is provided identifier
-            will be used as the value for the hash table. This identifier
-            is expected to be de-serialized in to an array-like object by a
-            provided function """
+    def index(self, input_point):
+        """ index a single input point. """
 
-        if identifier:
-            value = identifier
-        else:
-            value = tuple(input_point)
+        value = tuple(input_point)
 
         for i, table in enumerate(self.hash_tables):
             if self.storage is None:

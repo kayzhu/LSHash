@@ -80,6 +80,25 @@ class LSHash(object):
             self.uniform_planes = [self._generate_uniform_planes()
                                    for _ in xrange(self.num_hashtables)]
 
+    def _initialize_hashtables(self):
+        """ Initialize the hash tables such that each record will be in the
+        form of (,) """
+        if self.storage is None:
+            self.hash_tables = [defaultdict(list)
+                               for _ in xrange(self.num_hashtables)]
+        elif self.storage == "redis":
+            # TODO change to custom config details
+            try:
+                self.hash_tables = [redis.StrictRedis(host='localhost',
+                                                      port=6379,
+                                                      db=i)
+                                    for i in xrange(self.num_hashtables)]
+            except Exception:
+                print("ConecctionError occur when trying to connect to redis")
+                raise
+        else:
+            raise ValueError("The storage name you specified is not supported")
+
     def _generate_uniform_planes(self):
         """ generate uniformly distributed hyperplanes and return it as a 2D
         numpy array.
@@ -104,29 +123,36 @@ class LSHash(object):
         else:
             return "".join(['1' if i > 0 else '0' for i in projections])
 
-    def _initialize_hashtables(self):
-        """ Initialize the hash tables such that each record will be in the
-        form of (,) """
-        if self.storage is None:
-            self.hash_tables = [defaultdict(list)
-                               for _ in xrange(self.num_hashtables)]
-        elif self.storage == "redis":
-            # TODO change to custom config details
+    def _as_np_array(self, json_or_array_or_dict):
+        if isinstance(json_or_array_or_dict, basestring):
             try:
-                self.hash_tables = [redis.StrictRedis(host='localhost',
-                                                      port=6379,
-                                                      db=i)
-                                    for i in xrange(self.num_hashtables)]
+                array_or_dict = json.loads(json_or_array_or_dict)
+            # TODO fix it
             except Exception:
-                print("ConecctionError occur when trying to connect to redis")
                 raise
         else:
-            raise ValueError("The storage name you specified is not supported")
+            array_or_dict = json_or_array_or_dict
 
-    def index(self, input_point):
-        """ index a single input point. """
+        if isinstance(array_or_dict, dict):
+            return np.asarray(array_or_dict.keys()[0])
+        elif isinstance(array_or_dict, list):
+            try:
+                return np.asarray(array_or_dict)
+            except ValueError as e:
+                print("The input needs to be an array-like object", e)
+                raise
+        else:
+            raise TypeError
 
-        value = tuple(input_point)
+    def index(self, input_point, extra_data=False):
+        """ index a single input point. If `extra_data` is provided, it will
+        become the value of the dictionary {input_point: extra_data}, which in
+        turn will become the value of the hash table """
+
+        if extra_data:
+            value = {input_point: extra_data}
+        else:
+            value = tuple(input_point)
 
         for i, table in enumerate(self.hash_tables):
             if self.storage is None:
@@ -169,18 +195,6 @@ class LSHash(object):
 
         candidates.sort(key=lambda x: x[1])
         return candidates[:num_results]
-
-    def _as_np_array(self, array_or_filepath):
-        if isinstance(array_or_filepath, basestring):
-            result = json.loads(array_or_filepath)
-            return np.asarray(result)
-
-        else:
-            try:
-                return np.asarray(array_or_filepath)
-            except ValueError as e:
-                print("The input needs to be an array-like object", e)
-                raise
 
     ### distance functions
 

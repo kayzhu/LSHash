@@ -1,10 +1,22 @@
 import os
 import json
-import redis
-import numpy as np
 
-from bitarray import bitarray
 from collections import defaultdict
+
+try:
+    import redis
+except ImportError:
+    redis = False
+
+try:
+    import numpy as np
+except ImportError:
+    raise ImportError("LSHash requires numpy to be pre-installed.")
+
+try:
+    from bitarray import bitarray
+except ImportError:
+    bitarray = False
 
 
 class LSHash(object):
@@ -39,7 +51,7 @@ class LSHash(object):
         else:
             self.storage = storage.lower()
 
-        if not matrices_filename.endswith('.npz'):
+        if matrices_filename and not matrices_filename.endswith('.npz'):
             raise ValueError("The specified file name must end with .npz")
         self.matrices_filename = matrices_filename
         self.overwrite = overwrite
@@ -135,19 +147,20 @@ class LSHash(object):
 
         if isinstance(array_or_dict, dict):
             return np.asarray(array_or_dict.keys()[0])
-        elif isinstance(array_or_dict, list):
+        elif isinstance(array_or_dict, list) or isinstance(array_or_dict, tuple):
             try:
                 return np.asarray(array_or_dict)
             except ValueError as e:
                 print("The input needs to be an array-like object", e)
                 raise
         else:
-            raise TypeError
+            raise TypeError("query data is not supported")
 
     def index(self, input_point, extra_data=False):
         """ index a single input point. If `extra_data` is provided, it will
         become the value of the dictionary {input_point: extra_data}, which in
-        turn will become the value of the hash table """
+        turn will become the value of the hash table
+        """
 
         if extra_data:
             value = {input_point: extra_data}
@@ -164,7 +177,7 @@ class LSHash(object):
             else:
                 raise ValueError("Only redis is allowed for now")
 
-    def query(self, query_point, num_results, distance_func="euclidian"):
+    def query(self, query_point, num_results=None, distance_func="euclidian"):
         """ return num_results of results based on the supplied metric """
 
         if distance_func == "euclidian":
@@ -194,7 +207,10 @@ class LSHash(object):
                       for ix in candidates]
 
         candidates.sort(key=lambda x: x[1])
-        return candidates[:num_results]
+        if num_results:
+            return candidates[:num_results]
+        else:
+            return candidates
 
     ### distance functions
 

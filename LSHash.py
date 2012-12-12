@@ -1,6 +1,6 @@
 import os
-import redis
 import json
+import redis
 import numpy as np
 
 from bitarray import bitarray

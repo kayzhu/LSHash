@@ -32,7 +32,7 @@ To create 6-bit hashes for input data of 8 dimensions:
 Main Interface
 ---
 
-* To initialize:
+### To initialize:
 
 ```python
 LSHash(hash_size, input_dim, num_of_hashtables=1, storage=None,
@@ -58,7 +58,7 @@ overwrite = False:
     (optional) Whether to overwrite the matrices file if it already exist
 ```
 
-* To index a data point of a given `LSHash` instance, e.g., `lsh`:
+### To index a data point of a given `LSHash` instance, e.g., `lsh`:
 
 ```python
 lsh.index(input_point, extra_data=None):
@@ -73,7 +73,7 @@ extra_data = None:
     (optional) Extra data to be added along with the input_point.
 ```
 
-* To query a data point against a given `LSHash` instance, e.g., `lsh`:
+### To query a data point against a given `LSHash` instance, e.g., `lsh`:
 
 ```python
 lsh.query(query_point, num_results=None, distance_func="euclidian"):

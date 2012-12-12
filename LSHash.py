@@ -156,7 +156,7 @@ class LSHash(object):
         else:
             raise TypeError("query data is not supported")
 
-    def index(self, input_point, extra_data=False):
+    def index(self, input_point, extra_data=None):
         """ index a single input point. If `extra_data` is provided, it will
         become the value of the dictionary {input_point: extra_data}, which in
         turn will become the value of the hash table

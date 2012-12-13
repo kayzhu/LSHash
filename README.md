@@ -76,7 +76,7 @@ extra_data = None:
 ### To query a data point against a given `LSHash` instance, e.g., `lsh`:
 
 ```python
-lsh.query(query_point, num_results=None, distance_func="euclidian"):
+lsh.query(query_point, num_results=None, distance_func="euclidean"):
 
 ```
 
@@ -88,9 +88,9 @@ query_point:
 num_results = None:
     (optional) The number of query results to return in ranked order. By
     default all results will be returned.
-distance_func = "euclidian":
+distance_func = "euclidean":
     (optional) Distance function to use to rank the candidates. By default
-    euclidian distance function will be used.
+    euclidean distance function will be used.
 ```
 
 

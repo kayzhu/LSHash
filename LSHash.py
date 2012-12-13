@@ -1,22 +1,19 @@
 import os
 import json
+import numpy as np
 
 from collections import defaultdict
 
 try:
     import redis
 except ImportError:
-    redis = False
+    redis = None
 
-try:
-    import numpy as np
-except ImportError:
-    raise ImportError("LSHash requires numpy to be pre-installed.")
 
 try:
     from bitarray import bitarray
 except ImportError:
-    bitarray = False
+    bitarray = None
 
 
 class LSHash(object):
@@ -177,11 +174,13 @@ class LSHash(object):
             else:
                 raise ValueError("Only redis is allowed for now")
 
-    def query(self, query_point, num_results=None, distance_func="euclidian"):
+    def query(self, query_point, num_results=None, distance_func="euclidean"):
         """ return num_results of results based on the supplied metric """
 
-        if distance_func == "euclidian":
-            d_func = LSHash.euclidian_dist
+        if distance_func == "euclidean":
+            d_func = LSHash.euclidean_dist_approx
+        elif distance_func == "true_euclidean":
+            d_func = LSHash.euclidean_dist
         elif distance_func == "cosine":
             d_func = LSHash.cosine_dist
         elif distance_func == "l1norm":
@@ -220,8 +219,16 @@ class LSHash(object):
         return xor_result.count()
 
     @staticmethod
-    def euclidian_dist(x, y):
-        return np.linalg.norm(x - y)
+    def euclidean_dist(x, y):
+        """ This is a hot function, hence some optimizations are made. """
+        diff = x - y
+        return np.sqrt(np.dot(diff, diff))
+
+    @staticmethod
+    def euclidean_dist_square(x, y):
+        """ This is a hot function, hence some optimizations are made. """
+        diff = x - y
+        return np.dot(diff, diff)
 
     @staticmethod
     def l1norm_dist(x, y):

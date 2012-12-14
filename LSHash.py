@@ -144,7 +144,7 @@ class LSHash(object):
 
         if isinstance(array_or_dict, dict):
             return np.asarray(array_or_dict.keys()[0])
-        elif isinstance(array_or_dict, list) or isinstance(array_or_dict, tuple):
+        elif isinstance(array_or_dict, (list, tuple)):
             try:
                 return np.asarray(array_or_dict)
             except ValueError as e:

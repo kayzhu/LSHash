@@ -12,6 +12,12 @@ use of `numpy` arrays.
 * Multiple hash indexes support.
 * Built-in support for common distance/objective functions for ranking outputs.
 
+Requirement
+--
+* numpy
+* redis (if Redis persistency is needed)
+* bitarray (if hamming distance is used as distance function)
+
 Quickstart
 ---
 To create 6-bit hashes for input data of 8 dimensions:

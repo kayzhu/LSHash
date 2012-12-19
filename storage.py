@@ -5,11 +5,21 @@ try:
 except ImportError:
     imported_redis = None
 
-__all__ = ['InMemoryStorage', 'RedisStorage']
+__all__ = ['storage']
+
+
+def storage(storage_config, index):
+    if 'dict' in storage_config:
+        return InMemoryStorage(storage_config)
+    elif 'redis' in storage_config:
+        storage_config['db'] = index
+        return RedisStorage(storage_config)
+    else:
+        raise ValueError("Only in-memory dictionary and Redis and supported.")
 
 
 class BaseStorage(object):
-    def __init__(self, name):
+    def __init__(self, config):
         raise NotImplementedError
 
     def keys(self):
@@ -30,7 +40,7 @@ class BaseStorage(object):
 
 
 class InMemoryStorage(BaseStorage):
-    def __init__(self, name):
+    def __init__(self, config):
         self.name = 'dict'
         self.storage = dict()
 
@@ -44,21 +54,22 @@ class InMemoryStorage(BaseStorage):
         return self.storage[key]
 
     def append_val(self, key, value):
-        try:
-            self.storage[key].append(value)
-        except KeyError:
-            self.storage[key] = list(value)
+        self.storage.setdefault(key, []).append(value)
 
     def get_list(self, key):
         return self.storage[key]
 
 
 class RedisStorage(BaseStorage):
-    def __init__(self, name, config):
+    def __init__(self, config):
         if not imported_redis:
-            raise ImportError("Redis is required for using Redis as storage")
+            raise ImportError("redis-py is required to use Redis as storage.")
         self.name = 'redis'
-        self.storage = redis.StrictRedis(config)
+        try:
+            self.storage = redis.StrictRedis(**config)
+        except Exception:
+            print("ConecctionError occur when trying to connect to redis.")
+            raise
 
     def keys(self, pattern="*"):
         self.storage.keys(pattern)
@@ -70,10 +81,7 @@ class RedisStorage(BaseStorage):
         return self.storage.get(key)
 
     def append_val(self, key, val):
-        if isinstance(val, basestring):
-            self.storage.rpush(key, val)
-        else:
-            self.storage.rpush(key, json.dumps(val))
+        self.storage.rpush(key, json.dumps(val))
 
     def get_list(self, key):
         return self.storage.lrange(key, 0, -1)

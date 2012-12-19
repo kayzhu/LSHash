@@ -83,7 +83,6 @@ extra_data = None:
 
 ```python
 lsh.query(query_point, num_results=None, distance_func="euclidean"):
-
 ```
 
 parameters:

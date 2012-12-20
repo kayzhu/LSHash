@@ -26,13 +26,13 @@ class BaseStorage(object):
         """ Returns a list of binary hashes """
         raise NotImplementedError
 
-    def set_val(self, key, value):
+    def set_val(self, key, val):
         raise NotImplementedError
 
     def get_val(self, key):
         raise NotImplementedError
 
-    def append_val(self, key, value):
+    def append_val(self, key, val):
         raise NotImplementedError
 
     def get_list(self, key):
@@ -47,17 +47,17 @@ class InMemoryStorage(BaseStorage):
     def keys(self):
         self.storage.keys()
 
-    def set_val(self, key, value):
-        self.storage[key] = value
+    def set_val(self, key, val):
+        self.storage[key] = val
 
     def get_val(self, key):
         return self.storage[key]
 
-    def append_val(self, key, value):
-        self.storage.setdefault(key, []).append(value)
+    def append_val(self, key, val):
+        self.storage.setdefault(key, []).append(val)
 
     def get_list(self, key):
-        return self.storage[key]
+        return self.storage.get(key, [])
 
 
 class RedisStorage(BaseStorage):

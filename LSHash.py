@@ -2,18 +2,12 @@ import os
 import json
 import numpy as np
 
-from collections import defaultdict
-
-try:
-    import redis
-except ImportError:
-    redis = None
-
+from storage import storage
 
 try:
     from bitarray import bitarray
 except ImportError:
-    bitarray = None
+    imported_bitarray = None
 
 
 class LSHash(object):
@@ -28,34 +22,35 @@ class LSHash(object):
         The dimension of the input vector.
     :param num_hashtables:
         (optional) The number of hash tables used for multiple lookups.
-    :param storage:
-        (optional) Specify the name of the storage to be used for the index
-        storage. Options include "redis".
+    :param storage_config:
+        (optional) A dictionary of the form {backend_name: config} where
+        "backend_name" is the either "dict" or "redis", and "config" is the
+        configuration used by the backend. For "redis" it should be in the
+        format of {"redis": {"host": hostname, "port": port_num}}.
     :param matrices_filename:
         (optional) Specify the path to the .npz file random matrices are stored
         or to be stored if the file does not exist yet
     :param overwrite:
         (optional) Whether to overwrite the matrices file if it already exist
     """
-    def __init__(self, hash_size, input_dim, num_hashtables=1, storage=None,
-                 matrices_filename=None, overwrite=False):
+    def __init__(self, hash_size, input_dim, num_hashtables=1,
+                 storage_config=None, matrices_filename=None, overwrite=False):
 
         self.hash_size = hash_size
         self.input_dim = input_dim
         self.num_hashtables = num_hashtables
-        if storage is None:
-            self.storage = None
-        else:
-            self.storage = storage.lower()
+        if storage_config is None:
+            storage_config = {'dict': None}
+        self.storage_config = storage_config
 
         if matrices_filename and not matrices_filename.endswith('.npz'):
             raise ValueError("The specified file name must end with .npz")
         self.matrices_filename = matrices_filename
         self.overwrite = overwrite
-        self._initialize_uniform_planes()
-        self._initialize_hashtables()
+        self._init_uniform_planes()
+        self._init_hashtables()
 
-    def _initialize_uniform_planes(self):
+    def _init_uniform_planes(self):
         """
         if filename exist and (overwrite or not a file), save the file by
         np.save.
@@ -64,6 +59,9 @@ class LSHash(object):
         if filename does not exist and regardless of overwrite, only set
         self.uniform_planes.
         """
+
+        if "uniform_planes" in self.__dict__:
+            return
 
         if self.matrices_filename:
             file_exist = os.path.isfile(self.matrices_filename)
@@ -89,24 +87,11 @@ class LSHash(object):
             self.uniform_planes = [self._generate_uniform_planes()
                                    for _ in xrange(self.num_hashtables)]
 
-    def _initialize_hashtables(self):
+    def _init_hashtables(self):
         """ Initialize the hash tables such that each record will be in the
         form of (,) """
-        if self.storage is None:
-            self.hash_tables = [defaultdict(list)
-                               for _ in xrange(self.num_hashtables)]
-        elif self.storage == "redis":
-            # TODO change to custom config details
-            try:
-                self.hash_tables = [redis.StrictRedis(host='localhost',
-                                                      port=6379,
-                                                      db=i)
-                                    for i in xrange(self.num_hashtables)]
-            except Exception:
-                print("ConecctionError occur when trying to connect to redis")
-                raise
-        else:
-            raise ValueError("The storage name you specified is not supported")
+        self.hash_tables = [storage(self.storage_config, i)
+                            for i in xrange(self.num_hashtables)]
 
     def _generate_uniform_planes(self):
         """ generate uniformly distributed hyperplanes and return it as a 2D
@@ -132,21 +117,28 @@ class LSHash(object):
         else:
             return "".join(['1' if i > 0 else '0' for i in projections])
 
-    def _as_np_array(self, json_or_array_or_dict):
-        if isinstance(json_or_array_or_dict, basestring):
+    def _as_np_array(self, json_or_tuple):
+        if isinstance(json_or_tuple, basestring):
+            # JSON-serialized in the case of Redis
             try:
-                array_or_dict = json.loads(json_or_array_or_dict)
-            # TODO fix it
-            except Exception:
+                # Return the point stored as list, without the extra data
+                tuples = json.loads(json_or_tuple)[0]
+            except TypeError:
+                print("The value stored is not JSON-serilizable")
                 raise
         else:
-            array_or_dict = json_or_array_or_dict
+            # If extra_data exists, `tuples` is the entire
+            # (point:tuple, extra_data). Otherwise (i.e., extra_data=None),
+            # return the point stored as a tuple
+            tuples = json_or_tuple
 
-        if isinstance(array_or_dict, dict):
-            return np.asarray(array_or_dict.keys()[0])
-        elif isinstance(array_or_dict, (list, tuple)):
+        if isinstance(tuples[0], tuple):
+            # in this case extra data exists
+            return np.asarray(tuples[0])
+
+        elif isinstance(tuples, (tuple, list)):
             try:
-                return np.asarray(array_or_dict)
+                return np.asarray(tuples)
             except ValueError as e:
                 print("The input needs to be an array-like object", e)
                 raise
@@ -156,60 +148,62 @@ class LSHash(object):
     def index(self, input_point, extra_data=None):
         """ index a single input point. If `extra_data` is provided, it will
         become the value of the dictionary {input_point: extra_data}, which in
-        turn will become the value of the hash table
+        turn will become the value of the hash table. `extra_data` needs to be
+        JSON serializable if non-in-memory dict is used as storage.
         """
+        if isinstance(input_point, np.ndarray):
+            input_point = input_point.tolist()
 
         if extra_data:
-            value = {input_point: extra_data}
+            value = (tuple(input_point), extra_data)
         else:
             value = tuple(input_point)
 
         for i, table in enumerate(self.hash_tables):
-            if self.storage is None:
-                table[self._hash(self.uniform_planes[i], input_point)]\
-                        .append(value)
-            elif self.storage == "redis":
-                table.rpush(self._hash(self.uniform_planes[i], input_point),
-                            json.dumps(value))
-            else:
-                raise ValueError("Only redis is allowed for now")
+            table.append_val(self._hash(self.uniform_planes[i], input_point),
+                             value)
 
     def query(self, query_point, num_results=None, distance_func="euclidean"):
         """ return num_results of results based on the supplied metric """
 
-        if distance_func == "euclidean":
-            d_func = LSHash.euclidean_dist_approx
-        elif distance_func == "true_euclidean":
-            d_func = LSHash.euclidean_dist
-        elif distance_func == "cosine":
-            d_func = LSHash.cosine_dist
-        elif distance_func == "l1norm":
-            d_func = LSHash.l1norm_dist
-        else:
-            raise ValueError("The distance function name entered is invalid.")
-
         candidates = set()
 
-        for i, table in enumerate(self.hash_tables):
-            if self.storage is None:
-                match_list = table.get(self._hash(self.uniform_planes[i],
-                                                  query_point), [])
-            elif self.storage == "redis":
-                match_list = table.lrange(self._hash(self.uniform_planes[i],
-                                                     query_point), 0, -1)
-            else:
-                raise ValueError
-            candidates.update(match_list)
+        if distance_func == "hamming":
+            if not imported_bitarray:
+                raise ImportError(" Bitarray is required for hamming distance")
 
-        # rank candidates
+            for i, table in enumerate(self.hash_tables):
+                binary_hash = self._hash(self.uniform_planes[i], query_point)
+                for key in table.keys():
+                    distance = LSHash.hamming_dist(key, binary_hash)
+                    if distance < 2:
+                        candidates.update(table.get_list(key))
+
+            d_func = LSHash.euclidean_dist_square
+
+        else:
+
+            if distance_func == "euclidean":
+                d_func = LSHash.euclidean_dist_square
+            elif distance_func == "true_euclidean":
+                d_func = LSHash.euclidean_dist
+            elif distance_func == "cosine":
+                d_func = LSHash.cosine_dist
+            elif distance_func == "l1norm":
+                d_func = LSHash.l1norm_dist
+            else:
+                raise ValueError("The distance function name is invalid.")
+
+            for i, table in enumerate(self.hash_tables):
+                binary_hash = self._hash(self.uniform_planes[i], query_point)
+                candidates.update(table.get_list(binary_hash))
+
+        # rank candidates by distance function
         candidates = [(ix, d_func(query_point, self._as_np_array(ix)))
                       for ix in candidates]
-
         candidates.sort(key=lambda x: x[1])
-        if num_results:
-            return candidates[:num_results]
-        else:
-            return candidates
+
+        return candidates[:num_results] if num_results else candidates
 
     ### distance functions
 
@@ -221,13 +215,19 @@ class LSHash(object):
     @staticmethod
     def euclidean_dist(x, y):
         """ This is a hot function, hence some optimizations are made. """
-        diff = x - y
+        diff = np.array(x) - y
         return np.sqrt(np.dot(diff, diff))
 
     @staticmethod
     def euclidean_dist_square(x, y):
         """ This is a hot function, hence some optimizations are made. """
-        diff = x - y
+        diff = np.array(x) - y
+        return np.dot(diff, diff)
+
+    @staticmethod
+    def euclidean_dist_centred(x, y):
+        """ This is a hot function, hence some optimizations are made. """
+        diff = np.mean(x) - np.mean(y)
         return np.dot(diff, diff)
 
     @staticmethod

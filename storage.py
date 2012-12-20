@@ -3,7 +3,7 @@ import json
 try:
     import redis
 except ImportError:
-    imported_redis = None
+    redis = None
 
 __all__ = ['storage']
 
@@ -62,7 +62,7 @@ class InMemoryStorage(BaseStorage):
 
 class RedisStorage(BaseStorage):
     def __init__(self, config):
-        if not imported_redis:
+        if not redis:
             raise ImportError("redis-py is required to use Redis as storage.")
         self.name = 'redis'
         try:

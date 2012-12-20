@@ -7,7 +7,7 @@ from storage import storage
 try:
     from bitarray import bitarray
 except ImportError:
-    imported_bitarray = None
+    bitarray = None
 
 
 class LSHash(object):
@@ -169,7 +169,7 @@ class LSHash(object):
         candidates = set()
 
         if distance_func == "hamming":
-            if not imported_bitarray:
+            if not bitarray:
                 raise ImportError(" Bitarray is required for hamming distance")
 
             for i, table in enumerate(self.hash_tables):

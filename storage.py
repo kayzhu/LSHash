@@ -10,10 +10,10 @@ __all__ = ['storage']
 
 def storage(storage_config, index):
     if 'dict' in storage_config:
-        return InMemoryStorage(storage_config)
+        return InMemoryStorage(storage_config['dict'])
     elif 'redis' in storage_config:
-        storage_config['db'] = index
-        return RedisStorage(storage_config)
+        storage_config['redis']['db'] = index
+        return RedisStorage(storage_config['redis'])
     else:
         raise ValueError("Only in-memory dictionary and Redis and supported.")
 
@@ -45,7 +45,7 @@ class InMemoryStorage(BaseStorage):
         self.storage = dict()
 
     def keys(self):
-        self.storage.keys()
+        return self.storage.keys()
 
     def set_val(self, key, val):
         self.storage[key] = val
@@ -65,14 +65,10 @@ class RedisStorage(BaseStorage):
         if not redis:
             raise ImportError("redis-py is required to use Redis as storage.")
         self.name = 'redis'
-        try:
-            self.storage = redis.StrictRedis(**config)
-        except Exception:
-            print("ConecctionError occur when trying to connect to redis.")
-            raise
+        self.storage = redis.StrictRedis(**config)
 
     def keys(self, pattern="*"):
-        self.storage.keys(pattern)
+        return self.storage.keys(pattern)
 
     def set_val(self, key, val):
         self.storage.set(key, val)

@@ -12,11 +12,12 @@ use of `numpy` arrays.
 * Multiple hash indexes support.
 * Built-in support for common distance/objective functions for ranking outputs.
 
-Requirement
+Requirement & Installation
 --
 * numpy
 * redis (if Redis persistency is needed)
 * bitarray (if hamming distance is used as distance function)
+
 
 Quickstart
 ---

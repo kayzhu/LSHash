@@ -11,34 +11,40 @@ except ImportError:
 
 
 class LSHash(object):
-    """ LSHash implments locality sensitive hashing on for vectors of
-    dimension `input_dim`.
+    """ LSHash implments locality sensitive hashing using random projection for
+    input vectors of dimension `input_dim`.
 
     Attributes:
 
     :param hash_size:
-        The length of the resulting binary hash.
+        The length of the resulting binary hash in integer. E.g., 32 means the
+        resulting binary hash will be 32-bit long.
     :param input_dim:
-        The dimension of the input vector.
+        The dimension of the input vector. E.g., a grey-scale picture of 30x30
+        pixels will have an input dimension of 900.
     :param num_hashtables:
         (optional) The number of hash tables used for multiple lookups.
     :param storage_config:
-        (optional) A dictionary of the form {backend_name: config} where
-        "backend_name" is the either "dict" or "redis", and "config" is the
-        configuration used by the backend. For "redis" it should be in the
-        format of {"redis": {"host": hostname, "port": port_num}}.
+        (optional) A dictionary of the form `{backend_name: config}` where
+        `backend_name` is the either `dict` or `redis`, and `config` is the
+        configuration used by the backend. For `redis` it should be in the
+        format of `{"redis": {"host": hostname, "port": port_num}}`, where
+        `hostname` is normally `localhost` and `port` is normally 6379.
     :param matrices_filename:
-        (optional) Specify the path to the .npz file random matrices are stored
-        or to be stored if the file does not exist yet
+        (optional) Specify the path to the compressed numpy file ending with
+        extension `.npz`, where the uniform random planes are stored, or to be
+        stored if the file does not exist yet.
     :param overwrite:
         (optional) Whether to overwrite the matrices file if it already exist
     """
+
     def __init__(self, hash_size, input_dim, num_hashtables=1,
                  storage_config=None, matrices_filename=None, overwrite=False):
 
         self.hash_size = hash_size
         self.input_dim = input_dim
         self.num_hashtables = num_hashtables
+
         if storage_config is None:
             storage_config = {'dict': None}
         self.storage_config = storage_config
@@ -47,17 +53,21 @@ class LSHash(object):
             raise ValueError("The specified file name must end with .npz")
         self.matrices_filename = matrices_filename
         self.overwrite = overwrite
+
         self._init_uniform_planes()
         self._init_hashtables()
 
     def _init_uniform_planes(self):
-        """
-        if filename exist and (overwrite or not a file), save the file by
-        np.save.
-        if filename exist and is a file and not overwrite, load by np.load.
+        """ Initialize uniform planes used to calculate the hashes
 
-        if filename does not exist and regardless of overwrite, only set
-        self.uniform_planes.
+        if file `self.matrices_filename` exist and `self.overwrite` is
+        selected, save the uniform planes to the specified file.
+
+        if file `self.matrices_filename` exist and `self.overwrite` is not
+        selected, load the matrix with `np.load`.
+
+        if file `self.matrices_filename` does not exist and regardless of
+        `self.overwrite`, only set `self.uniform_planes`.
         """
 
         if "uniform_planes" in self.__dict__:
@@ -89,20 +99,21 @@ class LSHash(object):
 
     def _init_hashtables(self):
         """ Initialize the hash tables such that each record will be in the
-        form of (,) """
+        form of "[storage1, storage2, ...]" """
+
         self.hash_tables = [storage(self.storage_config, i)
                             for i in xrange(self.num_hashtables)]
 
     def _generate_uniform_planes(self):
-        """ generate uniformly distributed hyperplanes and return it as a 2D
+        """ Generate uniformly distributed hyperplanes and return it as a 2D
         numpy array.
         """
+
         return np.random.randn(self.hash_size, self.input_dim)
 
     def _hash(self, planes, input_point):
-        """ generates the binary hash of `input_point` using random projection
-        and returns it.
-        """
+        """ Generates the binary hash for `input_point` and returns it.  """
+
         try:
             input_point = np.array(input_point)  # for faster dot product
             projections = np.dot(planes, input_point)
@@ -118,6 +129,10 @@ class LSHash(object):
             return "".join(['1' if i > 0 else '0' for i in projections])
 
     def _as_np_array(self, json_or_tuple):
+        """ Takes either a JSON-serialized data structure or a tuple that has
+        the original input points stored, and returns the original input point
+        in numpy array format.
+        """
         if isinstance(json_or_tuple, basestring):
             # JSON-serialized in the case of Redis
             try:
@@ -146,11 +161,14 @@ class LSHash(object):
             raise TypeError("query data is not supported")
 
     def index(self, input_point, extra_data=None):
-        """ index a single input point. If `extra_data` is provided, it will
-        become the value of the dictionary {input_point: extra_data}, which in
-        turn will become the value of the hash table. `extra_data` needs to be
-        JSON serializable if non-in-memory dict is used as storage.
+        """ Index a single input point by adding it to the selected storage.
+
+        If `extra_data` is provided, it will become the value of the dictionary
+        {input_point: extra_data}, which in turn will become the value of the
+        hash table. `extra_data` needs to be JSON serializable if in-memory
+        dict is not used as storage.
         """
+
         if isinstance(input_point, np.ndarray):
             input_point = input_point.tolist()
 
@@ -164,7 +182,10 @@ class LSHash(object):
                              value)
 
     def query(self, query_point, num_results=None, distance_func="euclidean"):
-        """ return num_results of results based on the supplied metric """
+        """ Takes `query_point` which is either a tuple or a list of numbers,
+        returns `num_results` of results that are ranked based on the supplied
+        metric function `distance_func`.
+        """
 
         candidates = set()
 

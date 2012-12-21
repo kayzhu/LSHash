@@ -33,9 +33,19 @@ class BaseStorage(object):
         raise NotImplementedError
 
     def append_val(self, key, val):
+        """ Append `val` to the list stored at `key`.
+
+        If the key is not yet present in storage, create a list with `val` at
+        `key`.
+        """
         raise NotImplementedError
 
     def get_list(self, key):
+        """ Returns a list stored in storage at `key`.
+
+        This method should return a list of values stored at `key`. `[]` should
+        be returned if the list is empty or if `key` is not present in storage.
+        """
         raise NotImplementedError
 
 

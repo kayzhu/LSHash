@@ -9,13 +9,16 @@ __all__ = ['storage']
 
 
 def storage(storage_config, index):
+    """ Given the configuration for storage and the index, return the
+    configured storage instance.
+    """
     if 'dict' in storage_config:
         return InMemoryStorage(storage_config['dict'])
     elif 'redis' in storage_config:
         storage_config['redis']['db'] = index
         return RedisStorage(storage_config['redis'])
     else:
-        raise ValueError("Only in-memory dictionary and Redis and supported.")
+        raise ValueError("Only in-memory dictionary and Redis are supported.")
 
 
 class BaseStorage(object):
@@ -23,13 +26,15 @@ class BaseStorage(object):
         raise NotImplementedError
 
     def keys(self):
-        """ Returns a list of binary hashes """
+        """ Returns a list of binary hashes that are used as dict keys. """
         raise NotImplementedError
 
     def set_val(self, key, val):
+        """ Set `val` at `key`, note that the `val` must be a string. """
         raise NotImplementedError
 
     def get_val(self, key):
+        """ Return `val` at `key`, note that the `val` must be a string. """
         raise NotImplementedError
 
     def append_val(self, key, val):

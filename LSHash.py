@@ -112,7 +112,15 @@ class LSHash(object):
         return np.random.randn(self.hash_size, self.input_dim)
 
     def _hash(self, planes, input_point):
-        """ Generates the binary hash for `input_point` and returns it.  """
+        """ Generates the binary hash for `input_point` and returns it.
+
+        :param planes:
+            The planes are random uniform planes with a dimension of
+            `hash_size` * `input_dim`.
+        :param input_point:
+            A Python tuple or list object that contains only numbers.
+            The dimension needs to be 1 * `input_dim`.
+        """
 
         try:
             input_point = np.array(input_point)  # for faster dot product
@@ -167,6 +175,15 @@ class LSHash(object):
         {input_point: extra_data}, which in turn will become the value of the
         hash table. `extra_data` needs to be JSON serializable if in-memory
         dict is not used as storage.
+
+        :param input_point:
+            A list, or tuple, or numpy ndarray object that contains numbers
+            only. The dimension needs to be 1 * `input_dim`.
+            This object will be converted to Python tuple and stored in the
+            selected storage.
+        :param extra_data:
+            (optional) Needs to be a JSON-serializable object: list, dicts and
+            basic types such as strings and integers.
         """
 
         if isinstance(input_point, np.ndarray):
@@ -181,13 +198,29 @@ class LSHash(object):
             table.append_val(self._hash(self.uniform_planes[i], input_point),
                              value)
 
-    def query(self, query_point, num_results=None, distance_func="euclidean"):
+    def query(self, query_point, num_results=None, distance_func=None):
         """ Takes `query_point` which is either a tuple or a list of numbers,
-        returns `num_results` of results that are ranked based on the supplied
-        metric function `distance_func`.
+        returns `num_results` of results as a list of tuples that are ranked
+        based on the supplied metric function `distance_func`.
+
+        :param query_point:
+            A list, or tuple, or numpy ndarray that only contains numbers.
+            The dimension needs to be 1 * `input_dim`.
+            Used by :meth:`._hash`.
+        :param num_results:
+            (optional) Integer, specifies the max amount of results to be
+            returned. If not specified all candidates will be returned as a
+            list in ranked order.
+        :param distance_func:
+            (optional) The distance function to be used. Currently it needs to
+            be one of ("hamming", "euclidean", "true_euclidean",
+            "centred_euclidean", "cosine", "l1norm"). By default "euclidean"
+            will used.
         """
 
         candidates = set()
+        if not distance_func:
+            distance_func = "euclidean"
 
         if distance_func == "hamming":
             if not bitarray:
@@ -208,6 +241,8 @@ class LSHash(object):
                 d_func = LSHash.euclidean_dist_square
             elif distance_func == "true_euclidean":
                 d_func = LSHash.euclidean_dist
+            elif distance_func == "centred_euclidean":
+                d_func = LSHash.euclidean_dist_centred
             elif distance_func == "cosine":
                 d_func = LSHash.cosine_dist
             elif distance_func == "l1norm":

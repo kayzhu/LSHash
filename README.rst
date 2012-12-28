@@ -50,7 +50,7 @@ To create 6-bit hashes for input data of 8 dimensions:
 Main Interface
 ==============
 
-To initialize a ``LSHash`` instance:
+- To initialize a ``LSHash`` instance:
 
 .. code-block:: python
 
@@ -73,7 +73,7 @@ parameters:
 ``overwrite = False``:
     (optional) Whether to overwrite the matrices file if it already exist
 
-To index a data point of a given ``LSHash`` instance, e.g., ``lsh``:
+- To index a data point of a given ``LSHash`` instance, e.g., ``lsh``:
 
 .. code-block:: python
 
@@ -86,7 +86,7 @@ parameters:
 ``extra_data = None``:
     (optional) Extra data to be added along with the input_point.
 
-To query a data point against a given ``LSHash`` instance, e.g., ``lsh``:
+- To query a data point against a given ``LSHash`` instance, e.g., ``lsh``:
 
 .. code-block:: python
 

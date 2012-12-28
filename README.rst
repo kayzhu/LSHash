@@ -18,6 +18,9 @@ Requirement & Installation
 * redis (if persistency through Redis is needed)
 * bitarray (if hamming distance is used as distance function)
 
+To install:
+
+```pip install lshash```
 
 Quickstart
 ---

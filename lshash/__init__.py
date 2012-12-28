@@ -9,4 +9,4 @@ __author__ = 'Kay Zhu (me@kayzhu.com)'
 __license__ = 'MIT'
 __version__ = '0.0.2dev'
 
-from lshash import lshash
+from lshash import LSHash

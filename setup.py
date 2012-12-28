@@ -17,10 +17,12 @@ with open('LICENSE') as f:
 with open('CHANGES.rst') as f:
     changes = f.read()
 
+required = ['numpy']
+
 setup(
     name='lshash',
     version=lshash.__version__,
-    packages=['lshash', ],
+    packages=['lshash'],
     author='Kay Zhu',
     author_email='me@kayzhu.com',
     maintainer='Kay Zhu',
@@ -28,7 +30,7 @@ setup(
     description='A fast Python implementation of locality sensitive hashing with persistance support.',
     long_description=readme + '\n\n' + changes,
     license=license,
-    requires=['numpy', ],
+    requires=required,
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',

@@ -15,7 +15,7 @@ use of `numpy` arrays.
 Requirement & Installation
 --
 * numpy
-* redis (if Redis persistency is needed)
+* redis (if persistency through Redis is needed)
 * bitarray (if hamming distance is used as distance function)
 
 

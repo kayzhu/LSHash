@@ -24,7 +24,7 @@ Quickstart
 To create 6-bit hashes for input data of 8 dimensions:
 
 ```python
->>> from LSHash import LSHash
+>>> from lshash import LSHash
 
 >>> lsh = LSHash(6, 8)
 >>> lsh.index([1,2,3,4,5,6,7,8])

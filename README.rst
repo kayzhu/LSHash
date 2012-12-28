@@ -1,5 +1,5 @@
 ======
-LSHash - Fast locality sensitive hashing library with persistance support.
+LSHash
 ======
 
 :Versioon: 0.0.2dev
@@ -81,7 +81,7 @@ parameters:
 
 ``input_point``:
     The input data point is an array or tuple of numbers of input_dim.
-``extra_data`` = None:
+``extra_data = None``:
     (optional) Extra data to be added along with the input_point.
 
 To query a data point against a given ``LSHash`` instance, e.g., ``lsh``:

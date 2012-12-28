@@ -10,8 +10,7 @@ support.
 Highlights
 ==========
 
-- Fast hash calculation for large amount of high dimensional data through the
-use of `numpy` arrays.
+- Fast hash calculation for large amount of high dimensional data through the use of `numpy` arrays.
 - Built-in support for persistency through Redis.
 - Multiple hash indexes support.
 - Built-in support for common distance/objective functions for ranking outputs.

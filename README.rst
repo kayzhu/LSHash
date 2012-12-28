@@ -17,7 +17,7 @@ use of `numpy` arrays.
 
 Installation
 ============
-``LSHash`` depends on the following libraries::
+``LSHash`` depends on the following libraries:
 
 - numpy
 - redis (if persistency through Redis is needed)
@@ -27,7 +27,7 @@ To install:
 
 .. code-block:: bash
 
-    $ pip install lshash```
+    $ pip install lshash
 
 Quickstart
 ==========
@@ -49,29 +49,26 @@ To create 6-bit hashes for input data of 8 dimensions:
 Main Interface
 ==============
 
-To initialize an ``LSHash`` instance::
-
-    .. code-block:: python
-
-    LSHash(hash_size, input_dim, num_of_hashtables=1, storage=None,
-           matrices_filename=None, overwrite=False)
+To initialize an ``LSHash`` instance:
+.. code-block:: python
+    LSHash(hash_size, input_dim, num_of_hashtables=1, storage=None, matrices_filename=None, overwrite=False)
 
 parameters:
 
 
-*``hash_size``*:
+``hash_size``:
     The length of the resulting binary hash.
-*``input_dim``*:
+``input_dim``:
     The dimension of the input vector.
-*``num_hashtables = 1``*:
+``num_hashtables = 1``:
     (optional) The number of hash tables used for multiple lookups.
-*``storage = None``*:
+``storage = None``:
     (optional) Specify the name of the storage to be used for the index
     storage. Options include "redis".
-*``matrices_filename = None``*:
+``matrices_filename = None``:
     (optional) Specify the path to the .npz file random matrices are stored
     or to be stored if the file does not exist yet
-*``overwrite = False``*:
+``overwrite = False``:
     (optional) Whether to overwrite the matrices file if it already exist
 
 To index a data point of a given ``LSHash`` instance, e.g., ``lsh``:
@@ -82,9 +79,9 @@ To index a data point of a given ``LSHash`` instance, e.g., ``lsh``:
 
 parameters:
 
-*``input_point``*:
+``input_point``:
     The input data point is an array or tuple of numbers of input_dim.
-*``extra_data``* = None:
+``extra_data`` = None:
     (optional) Extra data to be added along with the input_point.
 
 To query a data point against a given ``LSHash`` instance, e.g., ``lsh``:
@@ -94,12 +91,12 @@ To query a data point against a given ``LSHash`` instance, e.g., ``lsh``:
 
 parameters:
 
-*``query_point``*:
+``query_point``:
     The query data point is an array or tuple of numbers of input_dim.
-*``num_results = None``*:
+``num_results = None``:
     (optional) The number of query results to return in ranked order. By
     default all results will be returned.
-*``distance_func = "euclidean"``*:
+``distance_func = "euclidean"``:
     (optional) Distance function to use to rank the candidates. By default
     euclidean distance function will be used.
 

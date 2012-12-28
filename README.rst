@@ -9,6 +9,7 @@ support.
 
 Highlights
 ==========
+
 - Fast hash calculation for large amount of high dimensional data through the
 use of `numpy` arrays.
 - Built-in support for persistency through Redis.
@@ -50,11 +51,11 @@ Main Interface
 ==============
 
 To initialize an ``LSHash`` instance:
+
 .. code-block:: python
     LSHash(hash_size, input_dim, num_of_hashtables=1, storage=None, matrices_filename=None, overwrite=False)
 
 parameters:
-
 
 ``hash_size``:
     The length of the resulting binary hash.
@@ -74,7 +75,6 @@ parameters:
 To index a data point of a given ``LSHash`` instance, e.g., ``lsh``:
 
 .. code-block:: python
-
     lsh.index(input_point, extra_data=None):
 
 parameters:
@@ -99,8 +99,3 @@ parameters:
 ``distance_func = "euclidean"``:
     (optional) Distance function to use to rank the candidates. By default
     euclidean distance function will be used.
-
-
-
-
-
